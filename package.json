@@ -1,0 +1,17 @@
+{
+  "name": "alpha-bot-backend",
+  "version": "1.0.0",
+  "description": "Alpha Bot 24/7 cloud worker — market data, analysis, paper trading",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.43.4",
+    "ws": "^8.17.1",
+    "node-fetch": "^3.3.2",
+    "dotenv": "^16.4.5"
+  }
+}
