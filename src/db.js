@@ -34,6 +34,41 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
 export const USER_ID = BOT_USER_ID;
 
 // ── Bot Status ─────────────────────────────────────────────
+// bot_status uses real typed columns (snake_case in Postgres),
+// but the rest of the app works in camelCase. Map between the two
+// here so callers never have to think about column naming.
+const BOT_STATUS_FIELD_MAP = {
+  status: "status",
+  serverOnline: "server_online",
+  lastAnalysisTime: "last_analysis_time",
+  lastCandleTime: "last_candle_time",
+  errorStatus: "error_status",
+  currentSignal: "current_signal",
+  currentRegime: "current_regime",
+  openPositions: "open_positions",
+  version: "version",
+};
+const BOT_STATUS_REVERSE_MAP = Object.fromEntries(
+  Object.entries(BOT_STATUS_FIELD_MAP).map(([camel, snake]) => [snake, camel])
+);
+
+function toBotStatusRow(fields) {
+  const row = {};
+  for (const [key, value] of Object.entries(fields)) {
+    row[BOT_STATUS_FIELD_MAP[key] || key] = value;
+  }
+  return row;
+}
+
+function fromBotStatusRow(row) {
+  if (!row) return row;
+  const out = {};
+  for (const [key, value] of Object.entries(row)) {
+    out[BOT_STATUS_REVERSE_MAP[key] || key] = value;
+  }
+  return out;
+}
+
 export async function getBotStatus() {
   const { data, error } = await supabase
     .from("bot_status")
@@ -41,13 +76,14 @@ export async function getBotStatus() {
     .eq("user_id", USER_ID)
     .maybeSingle();
   if (error) console.warn("[DB] getBotStatus:", error.message);
-  return data;
+  return fromBotStatusRow(data);
 }
 
 export async function upsertBotStatus(fields) {
+  const row = toBotStatusRow({ user_id: USER_ID, updated_at: new Date().toISOString(), ...fields });
   const { error } = await supabase
     .from("bot_status")
-    .upsert({ user_id: USER_ID, updated_at: new Date().toISOString(), ...fields }, { onConflict: "user_id" });
+    .upsert(row, { onConflict: "user_id" });
   if (error) console.warn("[DB] upsertBotStatus:", error.message);
 }
 
